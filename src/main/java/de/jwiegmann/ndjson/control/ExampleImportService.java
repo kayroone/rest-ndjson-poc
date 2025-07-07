@@ -32,6 +32,8 @@ public class ExampleImportService {
     public void processNdjsonStream(InputStream inputStream) throws IOException {
         Map<String, List<ExamplePayload>> groupedData = new LinkedHashMap<>();
 
+        long overallStart = System.currentTimeMillis(); // Startzeitpunkt für Gesamtverarbeitung
+
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             int lineNumber = 1;
@@ -48,7 +50,6 @@ public class ExampleImportService {
                     JsonNode payloadNode = node.get("examplePayload");
 
                     ExamplePayload payload = mapper.treeToValue(payloadNode, ExamplePayload.class);
-
                     groupedData.computeIfAbsent(id, k -> new ArrayList<>()).add(payload);
 
                 } catch (Exception e) {
@@ -72,7 +73,11 @@ public class ExampleImportService {
                     System.err.printf("Fehler bei Verarbeitung von examplePayloadId %s: %s%n", id, ex.getMessage());
                 }
             }
+
         }
+
+        long overallDuration = System.currentTimeMillis() - overallStart;
+        System.out.printf("⏱️ Gesamtverarbeitungszeit: %d ms%n", overallDuration);
     }
 
     /**
