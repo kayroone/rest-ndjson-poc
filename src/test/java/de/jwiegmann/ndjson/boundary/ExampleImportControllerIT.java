@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ExampleImportControllerIT {
 
+    public static final int ZEILEN_TESTFILE = 50000;
     @Autowired
     private MockMvc mockMvc;
 
@@ -41,12 +42,11 @@ class ExampleImportControllerIT {
         ndjsonFilePath = resourceDir.resolve("example-payload.ndjson");
 
         try (BufferedWriter writer = Files.newBufferedWriter(ndjsonFilePath)) {
-            // Optional: Header
+
             writer.write("{ \"header\": { \"bewirtschafterNr\": \"123456789\", \"erstellungsdatum\": \"2025-07-04T10:00:00Z\" } }");
             writer.newLine();
 
-            // 5000 Payload-Zeilen, verteilt auf 100 examplePayloadIds
-            for (int i = 0; i < 5000; i++) {
+            for (int i = 0; i < ZEILEN_TESTFILE; i++) {
                 String id = "id" + (i % 100);
                 String payload = String.format(
                         "{ \"examplePayloadId\": \"%s\", \"examplePayload\": { \"betrag\": %d, \"zeitstempelWertstellung\": \"2025-07-01T%02d:00:00Z\", \"verwendungszweck\": \"Testzahlung %d\" } }",
@@ -58,7 +58,6 @@ class ExampleImportControllerIT {
         }
 
         System.out.println("NDJSON-Testdatei erzeugt: " + ndjsonFilePath);
-        System.out.println("NDJSON-Dateipfad: " + ndjsonFilePath.toAbsolutePath());
     }
 
     @Test
@@ -76,6 +75,7 @@ class ExampleImportControllerIT {
         Path errorFile = Paths.get("src", "test", "resources", "tmp", "example-error-payload.ndjson");
 
         try (BufferedWriter writer = Files.newBufferedWriter(errorFile)) {
+
             // Fehlerhafte Gruppe: enthält Betrag -9999
             writer.write("{ \"examplePayloadId\": \"idFehler\", \"examplePayload\": { \"betrag\": 100, \"zeitstempelWertstellung\": \"2025-07-01T10:00:00Z\", \"verwendungszweck\": \"Valid innerhalb Fehlergruppe\" } }");
             writer.newLine();

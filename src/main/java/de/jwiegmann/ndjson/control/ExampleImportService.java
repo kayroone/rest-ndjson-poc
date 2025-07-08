@@ -32,13 +32,16 @@ public class ExampleImportService {
     public void processNdjsonStream(InputStream inputStream) throws IOException {
         Map<String, List<ExamplePayload>> groupedData = new LinkedHashMap<>();
 
-        long overallStart = System.currentTimeMillis(); // Startzeitpunkt für Gesamtverarbeitung
+        long overallStart = System.currentTimeMillis(); // Startzeitpunkt
+        int totalLines = 0;
+        int validLines = 0;
+        int parsingErrors = 0;
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
-            int lineNumber = 1;
 
             while ((line = reader.readLine()) != null) {
+                totalLines++;
                 try {
                     JsonNode node = mapper.readTree(line);
 
@@ -51,12 +54,12 @@ public class ExampleImportService {
 
                     ExamplePayload payload = mapper.treeToValue(payloadNode, ExamplePayload.class);
                     groupedData.computeIfAbsent(id, k -> new ArrayList<>()).add(payload);
+                    validLines++;
 
                 } catch (Exception e) {
-                    System.err.printf("Parsing-Fehler in Zeile %d: %s%n", lineNumber, e.getMessage());
+                    parsingErrors++;
+                    System.err.printf("Parsing-Fehler in Zeile %d: %s%n", totalLines, e.getMessage());
                 }
-
-                lineNumber++;
             }
 
             for (Map.Entry<String, List<ExamplePayload>> entry : groupedData.entrySet()) {
@@ -73,11 +76,23 @@ public class ExampleImportService {
                     System.err.printf("Fehler bei Verarbeitung von examplePayloadId %s: %s%n", id, ex.getMessage());
                 }
             }
-
         }
 
         long overallDuration = System.currentTimeMillis() - overallStart;
-        System.out.printf("⏱️ Gesamtverarbeitungszeit: %d ms%n", overallDuration);
+
+        // Strukturierte Zusammenfassung
+        System.out.println("\nZusammenfassung:");
+        System.out.printf("🔹 Gesamtzeilen gelesen:         %d%n", totalLines);
+        System.out.printf("🔹 Davon gültige Payload-Zeilen: %d%n", validLines);
+        System.out.printf("🔹 Parsing-Fehler:               %d%n", parsingErrors);
+        System.out.printf("🔹 Anzahl unterschiedlicher IDs: %d%n", groupedData.size());
+
+        System.out.println("🔹 Objekte je ID:");
+        groupedData.forEach((id, list) ->
+                System.out.printf("   • %s → %d Objekte%n", id, list.size())
+        );
+
+        System.out.printf("\nGesamtverarbeitungszeit: %d ms%n", overallDuration);
     }
 
     /**
